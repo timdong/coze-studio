@@ -24,12 +24,16 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/config"
 	"github.com/hertz-contrib/cors"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/coze-dev/coze-studio/backend/api/middleware"
 	"github.com/coze-dev/coze-studio/backend/api/router"
@@ -51,7 +55,16 @@ func main() {
 
 	setLogLevel()
 
-	if err := application.Init(ctx); err != nil {
+	// 连接 PostgreSQL 数据库
+	db, err := connectPostgreSQL()
+	if err != nil {
+		panic("Failed to connect PostgreSQL database, err=" + err.Error())
+	}
+
+	// 设置存储服务环境变量（必须在 application.Init 之前）
+	setupStorageEnvironment()
+
+	if err := application.Init(ctx, db); err != nil {
 		panic("InitializeInfra failed, err=" + err.Error())
 	}
 
@@ -153,4 +166,83 @@ func setLogLevel() {
 func setCrashOutput() {
 	crashFile, _ := os.Create("crash.log")
 	debug.SetCrashOutput(crashFile, debug.CrashOptions{})
+}
+
+// connectPostgreSQL 连接 PostgreSQL 数据库
+func connectPostgreSQL() (*gorm.DB, error) {
+	host := getEnv("DATABASE_HOST", "localhost")
+	portStr := getEnv("DATABASE_PORT", "15432")
+	user := getEnv("DATABASE_USER", "postgres")
+	password := getEnv("DATABASE_PASSWORD", "password")
+	name := getEnv("DATABASE_NAME", "coze_studio_db")
+	sslmode := getEnv("DATABASE_SSLMODE", "disable")
+	timezone := getEnv("DATABASE_TIMEZONE", "Asia/Shanghai")
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database port: %w", err)
+	}
+
+	// 构建 DSN
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
+		host, user, password, name, port, sslmode, timezone)
+
+	// 连接数据库
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect database: %w", err)
+	}
+
+	// 设置连接池
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database instance: %w", err)
+	}
+
+	maxOpenConnsStr := getEnv("DATABASE_MAX_OPEN_CONNS", "200")
+	maxOpenConns, err := strconv.Atoi(maxOpenConnsStr)
+	if err != nil {
+		maxOpenConns = 200
+	}
+	maxIdleConnsStr := getEnv("DATABASE_MAX_IDLE_CONNS", "50")
+	maxIdleConns, err := strconv.Atoi(maxIdleConnsStr)
+	if err != nil {
+		maxIdleConns = 50
+	}
+	connMaxLifetimeStr := getEnv("DATABASE_CONN_MAX_LIFETIME", "600s")
+	connMaxLifetime, err := time.ParseDuration(connMaxLifetimeStr)
+	if err != nil {
+		connMaxLifetime = 600 * time.Second
+	}
+
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+
+	logs.Infof("PostgreSQL database connected successfully: %s:%d/%s", host, port, name)
+
+	return db, nil
+}
+
+// setupStorageEnvironment 从环境变量读取存储配置并设置环境变量
+func setupStorageEnvironment() {
+	// 从环境变量读取 MinIO 配置
+	minioEnabled := getEnv("MINIO_ENABLED", "true")
+	if minioEnabled == "true" || minioEnabled == "1" {
+		os.Setenv("STORAGE_TYPE", "minio")
+		os.Setenv("MINIO_ENDPOINT", getEnv("MINIO_ENDPOINT", "localhost:9000"))
+		os.Setenv("MINIO_AK", getEnv("MINIO_ACCESS_KEY", "minioadmin"))
+		os.Setenv("MINIO_SK", getEnv("MINIO_SECRET_KEY", "minioadmin"))
+		os.Setenv("STORAGE_BUCKET", getEnv("MINIO_BUCKET_NAME", "coze-studio"))
+		if getEnv("MINIO_USE_SSL", "false") == "true" || getEnv("MINIO_USE_SSL", "false") == "1" {
+			os.Setenv("MINIO_USE_SSL", "true")
+		} else {
+			os.Setenv("MINIO_USE_SSL", "false")
+		}
+		logs.Infof("Storage environment variables set for MinIO: %s/%s",
+			getEnv("MINIO_ENDPOINT", "localhost:9000"),
+			getEnv("MINIO_BUCKET_NAME", "coze-studio"))
+	} else {
+		logs.Warnf("MinIO is not enabled, storage type may not be set")
+	}
 }

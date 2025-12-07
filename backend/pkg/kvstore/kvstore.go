@@ -73,8 +73,10 @@ func (g *KVStore[T]) Save(ctx context.Context, namespace, k string, v *T) error 
 		return fmt.Errorf("marshal failed for key %s for type %T: %w", k, *v, err)
 	}
 
+	// PostgreSQL syntax: ON CONFLICT ... DO UPDATE
 	res := g.db(ctx).Exec(
-		"INSERT INTO `kv_entries` (`namespace`, `key_data`, `value_data`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value_data` = ?",
+		`INSERT INTO kv_entries (namespace, key_data, value_data) VALUES (?, ?, ?)
+		 ON CONFLICT (namespace, key_data) DO UPDATE SET value_data = ?`,
 		namespace, k, data, data,
 	)
 
@@ -88,17 +90,21 @@ func (g *KVStore[T]) Save(ctx context.Context, namespace, k string, v *T) error 
 func (g *KVStore[T]) Get(ctx context.Context, namespace, k string) (*T, error) {
 	var obj T
 
-	row := g.db(ctx).Raw(
-		"SELECT `value_data` FROM `kv_entries` WHERE `namespace` = ? AND `key_data` = ? LIMIT 1",
-		namespace, k,
-	).Row()
-
 	var value []byte
-	if err := row.Scan(&value); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	err := g.db(ctx).Raw(
+		"SELECT value_data FROM kv_entries WHERE namespace = ? AND key_data = ? LIMIT 1",
+		namespace, k,
+	).Scan(&value).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrKeyNotFound
 		}
 		return nil, fmt.Errorf("failed to get key %s: %w", k, err)
+	}
+
+	if len(value) == 0 {
+		return nil, ErrKeyNotFound
 	}
 
 	if err := json.Unmarshal(value, &obj); err != nil {
@@ -110,7 +116,7 @@ func (g *KVStore[T]) Get(ctx context.Context, namespace, k string) (*T, error) {
 
 func (g *KVStore[T]) Delete(ctx context.Context, namespace, k string) error {
 	res := g.db(ctx).Exec(
-		"DELETE FROM `kv_entries` WHERE `namespace` = ? AND `key_data` = ?",
+		"DELETE FROM kv_entries WHERE namespace = ? AND key_data = ?",
 		namespace, k,
 	)
 

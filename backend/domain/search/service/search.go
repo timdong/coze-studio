@@ -20,7 +20,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	model "github.com/coze-dev/coze-studio/backend/crossdomain/search/model"
 	searchEntity "github.com/coze-dev/coze-studio/backend/domain/search/entity"

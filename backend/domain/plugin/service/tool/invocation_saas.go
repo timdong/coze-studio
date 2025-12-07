@@ -24,7 +24,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/internal/encoder"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"

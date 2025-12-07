@@ -71,9 +71,19 @@ func (p *projectBase) GetPermissionInfo() *intelligence.IntelligencePermissionIn
 }
 
 func (p *projectBase) GetUserInfo(ctx context.Context, userID int64) *common.User {
+	if p.SVC == nil || p.SVC.UserDomainSVC == nil {
+		logs.CtxErrorf(ctx, "[projectBase-GetUserInfo] SVC or UserDomainSVC is nil, user_id: %d", userID)
+		return nil
+	}
+
 	u, err := p.SVC.UserDomainSVC.GetUserInfo(ctx, userID)
 	if err != nil {
 		logs.CtxErrorf(ctx, "[projectBase-GetUserInfo] failed to get user info, user_id: %d, err: %v", userID, err)
+		return nil
+	}
+
+	if u == nil {
+		logs.CtxWarnf(ctx, "[projectBase-GetUserInfo] user info is nil, user_id: %d", userID)
 		return nil
 	}
 
@@ -89,6 +99,10 @@ type agentPacker struct {
 }
 
 func (a *agentPacker) GetProjectInfo(ctx context.Context) (*projectInfo, error) {
+	if a.SVC == nil || a.SVC.SingleAgentDomainSVC == nil {
+		return nil, fmt.Errorf("SVC or SingleAgentDomainSVC is nil")
+	}
+
 	agent, err := a.SVC.SingleAgentDomainSVC.GetSingleAgentDraft(ctx, a.projectID)
 	if err != nil {
 		return nil, err
@@ -104,10 +118,24 @@ func (a *agentPacker) GetProjectInfo(ctx context.Context) (*projectInfo, error) 
 }
 
 func (p *agentPacker) GetPublishedInfo(ctx context.Context) *intelligence.IntelligencePublishInfo {
+	if p.SVC == nil || p.SVC.SingleAgentDomainSVC == nil {
+		logs.CtxErrorf(ctx, "[agent-GetPublishedInfo] SVC or SingleAgentDomainSVC is nil, agent_id: %d", p.projectID)
+		return nil
+	}
+
 	pubInfo, err := p.SVC.SingleAgentDomainSVC.GetPublishedInfo(ctx, p.projectID)
 	if err != nil {
 		logs.CtxErrorf(ctx, "[agent-GetPublishedInfo]failed to get published info, agent_id: %d, err: %v", p.projectID, err)
 
+		return nil
+	}
+
+	if pubInfo == nil {
+		return nil
+	}
+
+	if p.SVC.ConnectorDomainSVC == nil {
+		logs.CtxErrorf(ctx, "[agent-GetPublishedInfo] ConnectorDomainSVC is nil, agent_id: %d", p.projectID)
 		return nil
 	}
 
@@ -140,9 +168,17 @@ type appPacker struct {
 }
 
 func (a *appPacker) GetProjectInfo(ctx context.Context) (*projectInfo, error) {
+	if a.SVC == nil || a.SVC.APPDomainSVC == nil {
+		return nil, fmt.Errorf("SVC or APPDomainSVC is nil")
+	}
+
 	app, err := a.SVC.APPDomainSVC.GetDraftAPP(ctx, a.projectID)
 	if err != nil {
 		return nil, err
+	}
+
+	if app == nil {
+		return nil, fmt.Errorf("app info is nil")
 	}
 	return &projectInfo{
 		iconURI: app.GetIconURI(),
@@ -151,6 +187,11 @@ func (a *appPacker) GetProjectInfo(ctx context.Context) (*projectInfo, error) {
 }
 
 func (a *appPacker) GetPublishedInfo(ctx context.Context) *intelligence.IntelligencePublishInfo {
+	if a.SVC == nil || a.SVC.APPDomainSVC == nil {
+		logs.CtxErrorf(ctx, "[app-GetPublishedInfo] SVC or APPDomainSVC is nil, app_id: %d", a.projectID)
+		return nil
+	}
+
 	record, exist, err := a.SVC.APPDomainSVC.GetAPPPublishRecord(ctx, &appService.GetAPPPublishRecordRequest{
 		APPID:  a.projectID,
 		Oldest: true,
@@ -165,6 +206,16 @@ func (a *appPacker) GetPublishedInfo(ctx context.Context) *intelligence.Intellig
 			HasPublished: false,
 			Connectors:   nil,
 		}
+	}
+
+	if record == nil {
+		logs.CtxErrorf(ctx, "[app-GetPublishedInfo] record is nil, app_id: %d", a.projectID)
+		return nil
+	}
+
+	if a.SVC.ConnectorDomainSVC == nil {
+		logs.CtxErrorf(ctx, "[app-GetPublishedInfo] ConnectorDomainSVC is nil, app_id: %d", a.projectID)
+		return nil
 	}
 
 	connectorInfo := make([]*common.ConnectorInfo, 0, len(record.ConnectorPublishRecords))

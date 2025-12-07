@@ -1,0 +1,194 @@
+# Coze Studio Super 融合项目配置文件
+# 支持环境变量覆盖，格式：COZE_SECTION_KEY (例如：COZE_DATABASE_HOST)
+
+# 应用配置
+app:
+  name: "coze-studio-super"
+  version: "1.0.0"
+  environment: "development"  # development, testing, production
+  debug: true
+  log_level: "debug"         # debug, info, warn, error
+  log_format: "text"         # text, json
+
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8888                 # Coze Studio 默认端口
+  read_timeout: 600s         # 支持大文件上传和长时间AI请求
+  write_timeout: 600s        # 支持长时间AI响应
+  idle_timeout: 120s
+
+# 数据库配置
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: 15432
+  user: "postgres"
+  password: "password"
+  name: "coze_studio_db"
+  sslmode: "disable"
+  timezone: "Asia/Shanghai"
+  max_open_conns: 200        # 连接池大小
+  max_idle_conns: 50         # 空闲连接数
+  conn_max_lifetime: 600s    # 连接生命周期
+  # 支持环境变量覆盖
+  # COZE_DATABASE_HOST, COZE_DATABASE_PORT, COZE_DATABASE_USER, COZE_DATABASE_PASSWORD
+
+# Redis配置
+redis:
+  enabled: true
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+  # 支持环境变量覆盖
+  # COZE_REDIS_HOST, COZE_REDIS_PORT, COZE_REDIS_PASSWORD
+
+# JWT配置
+jwt:
+  secret: "your-super-secret-jwt-key-change-in-production"
+  expire_hours: 24
+  refresh_expire_hours: 168
+  issuer: "coze-studio"
+  disabled: false
+  # 支持环境变量覆盖
+  # COZE_JWT_SECRET, COZE_JWT_EXPIRE_HOURS
+
+# 日志配置
+logging:
+  level: "debug"             # debug, info, warn, error
+  format: "text"             # json, text
+  output: "file"             # stdout, stderr, file
+  file_path: "logs/coze-studio.log"
+  max_size: 100              # MB
+  max_backups: 10            # 保留的日志文件数
+  max_age: 30                # 天
+  compress: true             # 是否压缩
+  # 支持环境变量覆盖
+  # COZE_LOG_LEVEL, COZE_LOG_FORMAT
+
+# 缓存配置
+cache:
+  enabled: true
+  mode: "multi"              # context, driver, multi
+  ttl: 300                   # 缓存TTL（秒）
+  lru_size: 100000           # LRU缓存大小
+  key_prefix: "coze:"        # 缓存键前缀
+
+# 向量数据库配置（pgvector）
+vector:
+  pgvector_enabled: true
+  embedding_dimension: 1536  # OpenAI embedding 维度
+  similarity_threshold: 0.7
+  max_results: 100
+
+# AI配置
+ai:
+  # Ollama配置
+  ollama:
+    host: "http://localhost:11434"
+    model: "llama3.2:3b"
+    timeout: 600s
+    embed_model: "nomic-embed-text"
+  
+  # RAG配置
+  rag:
+    chunk_size: 600
+    chunk_overlap: 80
+    max_tokens: 4000
+    temperature: 0.7
+    max_similar_chunks: 4
+    min_chunk_size: 50
+
+# MinIO配置
+minio:
+  enabled: true
+  endpoint: "localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  use_ssl: false
+  bucket_name: "coze-studio"
+  region: "us-east-1"
+  max_file_size: 104857600  # 100MB
+
+# 安全配置
+security:
+  encryption_key: ""  # 若留空则回退到jwt.secret的SHA-256
+  cors:
+    allowed_origins: ["http://localhost:8888", "http://localhost:3000", "*"]
+    allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allowed_headers: ["Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"]
+    allow_credentials: true
+    expose_headers: ["Content-Length", "Content-Type"]
+  
+  rate_limit:
+    enabled: true
+    global:
+      requests_per_second: 5000
+      burst: 3000
+    api:
+      requests_per_second: 5000
+      burst: 3000
+    per_ip:
+      requests_per_minute: 500000
+      burst: 200000
+
+# 扩展功能配置
+extensions:
+  # 多维表格系统
+  etrxtable:
+    enabled: true
+    table_prefix: "ext_table_"
+    max_tables: 100
+    max_fields_per_table: 50
+  
+  # ER 图编辑器
+  er_diagram:
+    enabled: true
+    max_diagrams: 50
+    max_tables_per_diagram: 100
+  
+  # 代码生成系统
+  code_generation:
+    enabled: true
+    supported_languages: ["go", "python", "java"]
+    output_dir: "generated"
+  
+  # MAS 多智能体系统
+  mas:
+    enabled: true
+    max_agents: 100
+    max_concurrent_tasks: 50
+
+# 监控配置
+monitoring:
+  metrics_port: 9090
+  health_check_interval: 30s
+  prometheus_enabled: true
+
+# 国际化配置
+i18n:
+  enabled: true
+  default_language: "zh-CN"
+  languages: ["zh-CN", "en-US"]
+  auto_detect: true
+
+# 开发配置
+development:
+  default_user_id: "admin"
+
+# 环境变量覆盖示例：
+# export COZE_APP_DEBUG=false
+# export COZE_DATABASE_HOST="localhost"
+# export COZE_DATABASE_PORT="5432"
+# export COZE_DATABASE_USER="postgres"
+# export COZE_DATABASE_PASSWORD="password"
+# export COZE_JWT_SECRET="your-secret-key"
+# export COZE_CACHE_ENABLED=true
+# export COZE_MINIO_ENABLED=true
+

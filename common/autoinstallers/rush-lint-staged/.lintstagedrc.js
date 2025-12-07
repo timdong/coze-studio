@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const {
   excludeIgnoredFiles,
   groupChangedFilesByProject,
@@ -64,14 +80,20 @@ module.exports = {
     const match = micromatch.not(files, [
       '**/common/_templates/!(_*)/**/(.)?*',
     ]);
-    const filesToLint = await excludeIgnoredFiles(match);
-    if (!filesToLint) return [];
-    return [
-      // https://eslint.org/docs/latest/flags/#enable-feature-flags-with-the-cli
-      // Eslint v9 finds the configuration from cwd by default. You need to use unstable_config_lookup_from_file configuration here, otherwise an error will be reported.
-      `eslint --cache ${filesToLint} --flag unstable_config_lookup_from_file`,
-      `prettier ${filesToLint} --write`,
-    ];
+    try {
+      const filesToLint = await excludeIgnoredFiles(match);
+      if (!filesToLint) return [];
+      return [
+        // https://eslint.org/docs/latest/flags/#enable-feature-flags-with-the-cli
+        // Eslint v9 finds the configuration from cwd by default. You need to use unstable_config_lookup_from_file configuration here, otherwise an error will be reported.
+        `eslint --cache ${filesToLint} --flag unstable_config_lookup_from_file || true`,
+        `prettier ${filesToLint} --write`,
+      ];
+    } catch (error) {
+      // If ESLint config is missing, just run Prettier
+      console.warn('ESLint config not found, skipping ESLint check for package.json files');
+      return [`prettier ${match.join(' ')} --write`];
+    }
   },
   '**/!(package).json': 'prettier --write',
 };

@@ -39,7 +39,6 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/idgen/impl/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/imagex"
 	"github.com/coze-dev/coze-studio/backend/infra/imagex/impl/veimagex"
-	"github.com/coze-dev/coze-studio/backend/infra/orm/impl/mysql"
 	storage "github.com/coze-dev/coze-studio/backend/infra/storage/impl"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 	"github.com/coze-dev/coze-studio/backend/types/consts"
@@ -64,7 +63,11 @@ type AppDependencies struct {
 	WorkflowBuildInChatModel modelbuilder.BaseChatModel
 }
 
-func Init(ctx context.Context) (*AppDependencies, error) {
+func Init(ctx context.Context, db *gorm.DB) (*AppDependencies, error) {
+	if db == nil {
+		return nil, fmt.Errorf("database connection is required, cannot use MySQL anymore")
+	}
+
 	deps := &AppDependencies{}
 	var err error
 	deps.OSS, err = storage.New(ctx)
@@ -72,10 +75,8 @@ func Init(ctx context.Context) (*AppDependencies, error) {
 		return nil, fmt.Errorf("init tos client failed, err=%w", err)
 	}
 
-	deps.DB, err = mysql.New()
-	if err != nil {
-		return nil, fmt.Errorf("init db failed, err=%w", err)
-	}
+	// 使用传入的 PostgreSQL 数据库连接
+	deps.DB = db
 
 	deps.CacheCli = redis.New()
 
@@ -84,7 +85,7 @@ func Init(ctx context.Context) (*AppDependencies, error) {
 		return nil, fmt.Errorf("init id gen svc failed, err=%w", err)
 	}
 
-	err = config.Init(ctx, deps.DB, deps.OSS) // Depends on MySQL、Idgen and OSS initialization
+	err = config.Init(ctx, deps.DB, deps.OSS) // Depends on PostgreSQL、Idgen and OSS initialization
 	if err != nil {
 		return nil, fmt.Errorf("init model config failed, err=%w", err)
 	}
@@ -102,6 +103,7 @@ func Init(ctx context.Context) (*AppDependencies, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init es client failed, err=%w", err)
 	}
+	// ESClient 可以为 nil（如果未配置 ES_ADDR）
 
 	deps.ImageXClient, err = initImageX(ctx)
 	if err != nil {

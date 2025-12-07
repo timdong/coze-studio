@@ -2,6 +2,8 @@ module github.com/coze-dev/coze-studio/backend
 
 go 1.24.0
 
+toolchain go1.24.11
+
 replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
 
 require (
@@ -185,7 +187,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-sqlite3 v1.14.15 // indirect
+	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/meguminnnnnnnnn/go-openai v0.0.0-20250821095446-07791bea23a0 // indirect
 	github.com/milvus-io/milvus/pkg/v2 v2.0.0-20250319085209-5a6b4e56d59e // indirect
 	github.com/minio/crc64nvme v1.0.1 // indirect
@@ -259,7 +261,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/automaxprocs v1.5.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
+	go.uber.org/zap v1.27.0
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/crypto v0.39.0
 	golang.org/x/net v0.41.0 // indirect
@@ -273,9 +275,9 @@ require (
 	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/datatypes v1.1.1-0.20230130040222-c43177d3cf8c // indirect
-	gorm.io/driver/postgres v1.5.11 // indirect
+	gorm.io/driver/postgres v1.5.11
 	gorm.io/hints v1.1.0 // indirect
 	k8s.io/apimachinery v0.32.3 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
@@ -285,7 +287,10 @@ require (
 require (
 	github.com/apache/pulsar-client-go v0.16.0
 	github.com/eino-contrib/ollama v0.1.0
+	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/nats-io/nats.go v1.34.1
+	github.com/spf13/viper v1.7.0
 )
 
 require (
@@ -302,23 +307,40 @@ require (
 	github.com/eino-contrib/jsonschema v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
+	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/hamba/avro/v2 v2.26.0 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/pgx/v5 v5.5.5 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/spf13/afero v1.1.2 // indirect
+	github.com/spf13/jwalterweatherman v1.0.0 // indirect
+	github.com/subosito/gotenv v1.2.0 // indirect
+	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
+	gopkg.in/ini.v1 v1.56.0 // indirect
 	k8s.io/client-go v0.32.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e // indirect

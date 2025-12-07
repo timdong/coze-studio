@@ -19,11 +19,11 @@ package tool
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/bytedance/sonic"
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/data/variable/project_memory"
@@ -124,7 +124,7 @@ func NewInvocationArgs(ctx context.Context, builder *InvocationArgsBuilder) (*In
 }
 
 func json2Map(argumentsInJson string) (map[string]any, error) {
-	decoder := sonic.ConfigDefault.NewDecoder(bytes.NewBufferString(argumentsInJson))
+	decoder := json.NewDecoder(bytes.NewBufferString(argumentsInJson))
 	decoder.UseNumber()
 
 	// Suppose the output of the large model is of type object

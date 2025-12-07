@@ -17,6 +17,7 @@
 package impl
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -49,6 +50,11 @@ func DefaultSVC() ConsumerService {
 
 func (consumerServiceImpl) RegisterConsumer(nameServer, topic, group string, consumerHandler eventbus.ConsumerHandler, opts ...eventbus.ConsumerOpt) error {
 	tp := os.Getenv(consts.MQTypeKey)
+	// 如果未配置 MQ_TYPE 或 nameServer 为空，静默忽略（no-op）
+	if tp == "" || nameServer == "" {
+		return nil
+	}
+
 	switch tp {
 	case "nsq":
 		return nsq.RegisterConsumer(nameServer, topic, group, consumerHandler, opts...)
@@ -65,8 +71,26 @@ func (consumerServiceImpl) RegisterConsumer(nameServer, topic, group string, con
 	return fmt.Errorf("invalid mq type: %s , only support nsq, kafka, rmq, pulsar, nats", tp)
 }
 
+// noOpProducer 是一个 no-op producer，用于在没有配置 MQ 时使用
+type noOpProducer struct{}
+
+func (n *noOpProducer) Send(ctx context.Context, body []byte, opts ...eventbus.SendOpt) error {
+	// No-op: 静默忽略消息发送
+	return nil
+}
+
+func (n *noOpProducer) BatchSend(ctx context.Context, bodyArr [][]byte, opts ...eventbus.SendOpt) error {
+	// No-op: 静默忽略批量消息发送
+	return nil
+}
+
 func NewProducer(nameServer, topic, group string, retries int) (eventbus.Producer, error) {
 	tp := os.Getenv(consts.MQTypeKey)
+	// 如果未配置 MQ_TYPE 或 nameServer 为空，返回 no-op producer
+	if tp == "" || nameServer == "" {
+		return &noOpProducer{}, nil
+	}
+
 	switch tp {
 	case "nsq":
 		return nsq.NewProducer(nameServer, topic, group)

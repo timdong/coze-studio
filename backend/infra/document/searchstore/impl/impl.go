@@ -35,25 +35,45 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/oceanbase"
 	"github.com/coze-dev/coze-studio/backend/pkg/envkey"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
+	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
 
 type Manager = searchstore.Manager
 
 func New(ctx context.Context, conf *config.KnowledgeConfig, es es.Client) ([]Manager, error) {
-	// es full text search
-	esSearchstoreManager := elasticsearch.NewManager(&elasticsearch.ManagerConfig{Client: es})
+	managers := []Manager{}
 
-	// vector search
-	mgr, err := getVectorStore(ctx, conf)
-	if err != nil {
-		return nil, fmt.Errorf("init vector store failed, err=%w", err)
+	// es full text search (如果 ES 客户端可用)
+	if es != nil {
+		esSearchstoreManager := elasticsearch.NewManager(&elasticsearch.ManagerConfig{Client: es})
+		managers = append(managers, esSearchstoreManager)
 	}
 
-	return []searchstore.Manager{esSearchstoreManager, mgr}, nil
+	// vector search (如果配置了 VECTOR_STORE_TYPE)
+	mgr, err := getVectorStore(ctx, conf)
+	if err != nil {
+		// 如果向量存储初始化失败，记录警告但继续（向量存储是可选的）
+		logs.CtxWarnf(ctx, "Vector store initialization failed, continuing without vector store: %v", err)
+	} else if mgr != nil {
+		managers = append(managers, mgr)
+	}
+
+	// 如果没有任何搜索存储管理器，记录警告但返回空列表（搜索存储是可选的）
+	if len(managers) == 0 {
+		logs.CtxWarnf(ctx, "No search store managers available (ES client and vector store both unavailable), continuing without search functionality")
+		return []Manager{}, nil
+	}
+
+	return managers, nil
 }
 
 func getVectorStore(ctx context.Context, conf *config.KnowledgeConfig) (searchstore.Manager, error) {
 	vsType := os.Getenv("VECTOR_STORE_TYPE")
+
+	// 如果未配置 VECTOR_STORE_TYPE，返回 nil（向量存储是可选的）
+	if vsType == "" {
+		return nil, nil
+	}
 
 	switch vsType {
 	case "milvus":

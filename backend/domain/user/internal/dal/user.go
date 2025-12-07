@@ -54,8 +54,8 @@ func (dao *UserDAO) UpdateSessionKey(ctx context.Context, userID int64, sessionK
 	_, err := dao.query.User.WithContext(ctx).Where(
 		dao.query.User.ID.Eq(userID),
 	).Updates(map[string]interface{}{
-		"session_key": sessionKey,
-		"updated_at":  time.Now().UnixMilli(),
+		"session_key":   sessionKey,
+		"updated_at_ms": time.Now().UnixMilli(),
 	})
 	return err
 }
@@ -74,9 +74,9 @@ func (dao *UserDAO) UpdatePassword(ctx context.Context, email, password string) 
 	_, err := dao.query.User.WithContext(ctx).Where(
 		dao.query.User.Email.Eq(email),
 	).Updates(map[string]interface{}{
-		"password":    password,
-		"session_key": "", // clear session key
-		"updated_at":  time.Now().UnixMilli(),
+		"password_hash": password,
+		"session_key":   "", // clear session key
+		"updated_at_ms": time.Now().UnixMilli(),
 	})
 	return err
 }
@@ -91,8 +91,8 @@ func (dao *UserDAO) UpdateAvatar(ctx context.Context, userID int64, iconURI stri
 	_, err := dao.query.User.WithContext(ctx).Where(
 		dao.query.User.ID.Eq(userID),
 	).Updates(map[string]interface{}{
-		"icon_uri":   iconURI,
-		"updated_at": time.Now().UnixMilli(),
+		"icon_uri":     iconURI,
+		"updated_at_ms": time.Now().UnixMilli(),
 	})
 	return err
 }
@@ -111,8 +111,8 @@ func (dao *UserDAO) CheckUniqueNameExist(ctx context.Context, uniqueName string)
 }
 
 func (dao *UserDAO) UpdateProfile(ctx context.Context, userID int64, updates map[string]interface{}) error {
-	if _, ok := updates["updated_at"]; !ok {
-		updates["updated_at"] = time.Now().UnixMilli()
+	if _, ok := updates["updated_at_ms"]; !ok {
+		updates["updated_at_ms"] = time.Now().UnixMilli()
 	}
 
 	_, err := dao.query.User.WithContext(ctx).Where(

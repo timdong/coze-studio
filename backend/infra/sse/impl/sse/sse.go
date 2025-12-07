@@ -33,6 +33,5 @@ func NewSSESender(ss *sse.Stream) *SSenderImpl {
 }
 
 func (s *SSenderImpl) Send(ctx context.Context, event *sse.Event) error {
-
 	return s.ss.Publish(event)
 }

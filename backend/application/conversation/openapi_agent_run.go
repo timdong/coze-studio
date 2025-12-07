@@ -39,7 +39,7 @@ import (
 	convEntity "github.com/coze-dev/coze-studio/backend/domain/conversation/conversation/entity"
 	cmdEntity "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/entity"
 	uploadService "github.com/coze-dev/coze-studio/backend/domain/upload/service"
-	sseImpl "github.com/coze-dev/coze-studio/backend/infra/sse/impl/sse"
+	sseInterface "github.com/coze-dev/coze-studio/backend/infra/sse"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
@@ -48,7 +48,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
-func (a *OpenapiAgentRunApplication) OpenapiAgentRun(ctx context.Context, sseSender *sseImpl.SSenderImpl, ar *run.ChatV3Request) error {
+func (a *OpenapiAgentRunApplication) OpenapiAgentRun(ctx context.Context, sseSender sseInterface.SSenderInterface, ar *run.ChatV3Request) error {
 
 	apiKeyInfo := ctxutil.GetApiAuthFromCtx(ctx)
 	creatorID := apiKeyInfo.UserID
@@ -353,7 +353,7 @@ func (a *OpenapiAgentRunApplication) parseAdditionalMessages(ctx context.Context
 	return additionalMessages, nil
 }
 
-func (a *OpenapiAgentRunApplication) pullStream(ctx context.Context, sseSender *sseImpl.SSenderImpl, streamer *schema.StreamReader[*entity.AgentRunResponse]) {
+func (a *OpenapiAgentRunApplication) pullStream(ctx context.Context, sseSender sseInterface.SSenderInterface, streamer *schema.StreamReader[*entity.AgentRunResponse]) {
 	for {
 		chunk, recvErr := streamer.Recv()
 		logs.CtxInfof(ctx, "chunk :%v, err:%v", conv.DebugJsonToStr(chunk), recvErr)

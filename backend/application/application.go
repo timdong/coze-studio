@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/coze-dev/coze-studio/backend/application/permission"
 
 	"github.com/coze-dev/coze-studio/backend/application/app"
@@ -120,9 +122,9 @@ type complexServices struct {
 	conversationSVC *conversation.ConversationApplicationService
 }
 
-func Init(ctx context.Context) (err error) {
+func Init(ctx context.Context, db *gorm.DB) (err error) {
 	ctx = ctxcache.Init(ctx)
-	infra, err := appinfra.Init(ctx)
+	infra, err := appinfra.Init(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -357,6 +359,7 @@ func (p *primaryServices) toSearchServiceComponents(singleAgentSVC *singleagent.
 		TOS:                  infra.OSS,
 		ESClient:             infra.ESClient,
 		ProjectEventBus:      p.basicServices.eventbus.projectEventBus,
+		ResourceEventBus:     p.basicServices.eventbus.resourceEventBus, // 修复：添加缺失的 ResourceEventBus
 		SingleAgentDomainSVC: singleAgentSVC.DomainSVC,
 		APPDomainSVC:         appSVC.DomainSVC,
 		KnowledgeDomainSVC:   p.knowledgeSVC.DomainSVC,

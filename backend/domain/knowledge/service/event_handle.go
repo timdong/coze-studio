@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/cloudwego/eino/components/document/parser"
 	"github.com/cloudwego/eino/schema"
 

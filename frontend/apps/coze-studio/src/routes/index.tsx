@@ -45,10 +45,15 @@ import {
   DatabaseDetail,
   ExplorePluginPage,
   ExploreTemplatePage,
+  EtrxTablePage,
+  MASPage,
+  ERDiagramPage,
+  CodeGenerationPage,
 } from './async-components';
 
 export const router: ReturnType<typeof createBrowserRouter> =
-  createBrowserRouter([
+  createBrowserRouter(
+    [
     // Document routing
     {
       path: '/open/docs/*',
@@ -234,6 +239,43 @@ export const router: ReturnType<typeof createBrowserRouter> =
                     },
                   ],
                 },
+
+                // Extension features
+                // Multi-dimensional Table System
+                {
+                  path: 'etrxtable',
+                  Component: EtrxTablePage,
+                  loader: () => ({
+                    subMenuKey: 'etrxtable',
+                  }),
+                },
+
+                // Multi-Agent System
+                {
+                  path: 'mas',
+                  Component: MASPage,
+                  loader: () => ({
+                    subMenuKey: 'mas',
+                  }),
+                },
+
+                // ER Diagram Editor
+                {
+                  path: 'er-diagram',
+                  Component: ERDiagramPage,
+                  loader: () => ({
+                    subMenuKey: 'er-diagram',
+                  }),
+                },
+
+                // Code Generation
+                {
+                  path: 'code-generation',
+                  Component: CodeGenerationPage,
+                  loader: () => ({
+                    subMenuKey: 'code-generation',
+                  }),
+                },
               ],
             },
           ],
@@ -294,4 +336,10 @@ export const router: ReturnType<typeof createBrowserRouter> =
         },
       ],
     },
-  ]);
+  ],
+    {
+      future: {
+        v7_startTransition: true,
+      },
+    },
+  );

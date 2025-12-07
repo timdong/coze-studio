@@ -53,10 +53,41 @@ common/temp
 .rush
 .eslintcache
 
+# Backend logs and config
+backend/logs/*.log
+backend/config.local.yaml
+backend/bin/*
+
+# Core and extensions generated files
+backend/core/**/*.test
+backend/extensions/**/*.test
 
 backend/conf/model/*.yaml
 values-dev.yaml
 **/conf/model_ark_doubao-seed-1.6.yaml
 
 *.tsbuildinfo
+
+# Frontend build artifacts and temporary files
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/dist/
+frontend/.next/
+frontend/.turbo/
+frontend/.cache/
+frontend/coverage/
+frontend/.nyc_output/
+frontend/.heft/
+frontend/.pnpm-store/
+frontend/pnpm-lock.yaml
+frontend/*.tsbuildinfo
+frontend/**/dist/
+frontend/**/.next/
+frontend/**/.cache/
+frontend/**/coverage/
+frontend/**/build/
+frontend/**/.turbo/
+
+# Frontend packages directory (excluded from git)
+frontend/packages/
 

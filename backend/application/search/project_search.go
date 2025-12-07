@@ -76,12 +76,13 @@ func (s *SearchApplicationService) GetDraftIntelligenceList(ctx context.Context,
 	intelligenceDataList := make([]*intelligence.IntelligenceData, len(searchResp.Data))
 
 	logs.CtxDebugf(ctx, "[GetDraftIntelligenceList] searchResp.Data: %v", conv.DebugJsonToStr(searchResp.Data))
+	userIDValue := *userID // 在循环外捕获 userID 的值
 	if len(searchResp.Data) > 1 {
 		for idx := range searchResp.Data[1:] {
 			index := idx + 1
 			data := searchResp.Data[index]
 			tasks.Go(func() error {
-				info, err := s.packIntelligenceData(ctx, data)
+				info, err := s.packIntelligenceData(ctx, data, userIDValue)
 				if err != nil {
 					logs.CtxErrorf(ctx, "[packIntelligenceData] failed id %v, type %d , name %s, err: %v", data.ID, data.Type, data.GetName(), err)
 					return nil
@@ -95,7 +96,7 @@ func (s *SearchApplicationService) GetDraftIntelligenceList(ctx context.Context,
 		}
 	}
 	if len(searchResp.Data) != 0 {
-		info, err := s.packIntelligenceData(ctx, searchResp.Data[0])
+		info, err := s.packIntelligenceData(ctx, searchResp.Data[0], *userID)
 		if err != nil {
 			logs.CtxErrorf(ctx, "[packIntelligenceData] failed id %v, type %d , name %s, err: %v", searchResp.Data[0].ID, searchResp.Data[0].Type, searchResp.Data[0].GetName(), err)
 		} else {
@@ -313,7 +314,7 @@ func (s *SearchApplicationService) GetUserRecentlyEditIntelligence(ctx context.C
 	intelligenceDataList := make([]*intelligence.IntelligenceData, 0, len(res.Data))
 	for idx := range res.Data {
 		data := res.Data[idx]
-		info, err := s.packIntelligenceData(ctx, data)
+		info, err := s.packIntelligenceData(ctx, data, *userID)
 		if err != nil {
 			logs.CtxErrorf(ctx, "[packIntelligenceData] failed id %v, type %d, name %s, err: %v", data.ID, data.Type, data.GetName(), err)
 			continue
@@ -330,7 +331,7 @@ func (s *SearchApplicationService) GetUserRecentlyEditIntelligence(ctx context.C
 	return resp, nil
 }
 
-func (s *SearchApplicationService) packIntelligenceData(ctx context.Context, doc *searchEntity.ProjectDocument) (*intelligence.IntelligenceData, error) {
+func (s *SearchApplicationService) packIntelligenceData(ctx context.Context, doc *searchEntity.ProjectDocument, userID int64) (*intelligence.IntelligenceData, error) {
 	intelligenceData := &intelligence.IntelligenceData{
 		Type: doc.Type,
 		BasicInfo: &common.IntelligenceBasicInfo{
@@ -345,9 +346,7 @@ func (s *SearchApplicationService) packIntelligenceData(ctx context.Context, doc
 		},
 	}
 
-	uid := ctxutil.MustGetUIDFromCtx(ctx)
-
-	packer, err := NewPackProject(uid, doc.ID, doc.Type, s)
+	packer, err := NewPackProject(userID, doc.ID, doc.Type, s)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +354,10 @@ func (s *SearchApplicationService) packIntelligenceData(ctx context.Context, doc
 	projInfo, err := packer.GetProjectInfo(ctx)
 	if err != nil {
 		return nil, errorx.Wrapf(err, "GetProjectInfo failed, id: %v, type: %v", doc.ID, doc.Type)
+	}
+
+	if projInfo == nil {
+		return nil, fmt.Errorf("projInfo is nil, id: %v, type: %v", doc.ID, doc.Type)
 	}
 
 	intelligenceData.BasicInfo.Description = projInfo.desc

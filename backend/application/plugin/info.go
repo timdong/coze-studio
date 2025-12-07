@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/getkin/kin-openapi/openapi3"
 	"gopkg.in/yaml.v3"
 

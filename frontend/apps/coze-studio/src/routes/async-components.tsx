@@ -150,3 +150,28 @@ export const ExplorePluginPage = lazy(() =>
     default: exps.PluginPage,
   })),
 );
+
+// Extension pages
+export const EtrxTablePage = lazy(() =>
+  import('../pages/extensions/etrxtable').then(res => ({
+    default: res.EtrxTablePage,
+  })),
+);
+
+export const MASPage = lazy(() =>
+  import('../pages/extensions/mas').then(res => ({
+    default: res.MASPage,
+  })),
+);
+
+export const ERDiagramPage = lazy(() =>
+  import('../pages/extensions/er-diagram').then(res => ({
+    default: res.ERDiagramPage,
+  })),
+);
+
+export const CodeGenerationPage = lazy(() =>
+  import('../pages/extensions/code-generation').then(res => ({
+    default: res.CodeGenerationPage,
+  })),
+);

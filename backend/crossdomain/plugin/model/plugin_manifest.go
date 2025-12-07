@@ -28,7 +28,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 )
 
 type PluginManifest struct {

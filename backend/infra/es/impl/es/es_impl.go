@@ -35,7 +35,18 @@ type (
 )
 
 func New() (Client, error) {
+	// 如果未设置 ES_ADDR，返回 nil（Elasticsearch 是可选的）
+	esAddr := os.Getenv("ES_ADDR")
+	if esAddr == "" {
+		return nil, nil
+	}
+
 	v := os.Getenv("ES_VERSION")
+	// 如果未设置 ES_VERSION，默认使用 v8
+	if v == "" {
+		v = "v8"
+	}
+
 	if v == "v8" {
 		return newES8()
 	} else if v == "v7" {

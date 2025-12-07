@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	pkgsonic "github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/schema"
 
@@ -889,7 +890,7 @@ func (f *fcInfo) inputString() string {
 		return ""
 	}
 
-	m, err := sonic.MarshalString(f.input)
+	m, err := pkgsonic.MarshalString(f.input)
 
 	if err != nil {
 		panic(err)

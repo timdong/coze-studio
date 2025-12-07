@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	pkgsonic "github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/ast"
 
@@ -376,7 +377,7 @@ func (tp TemplatePart) TypeInfo(types map[string]*vo.TypeInfo) *vo.TypeInfo {
 
 func Render(_ context.Context, tpl string, input map[string]any,
 	sources map[string]*schema.SourceInfo, opts ...RenderOption) (string, error) {
-	mi, err := sonic.Marshal(input)
+	mi, err := pkgsonic.Marshal(input)
 	if err != nil {
 		return "", err
 	}

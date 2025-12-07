@@ -88,6 +88,18 @@
       "path": "../../packages/community/explore/tsconfig.build.json"
     },
     {
+      "path": "../../packages/extensions/code-generation/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/extensions/er-diagram/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/extensions/etrxtable/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/extensions/mas/tsconfig.build.json"
+    },
+    {
       "path": "../../packages/foundation/account-adapter/tsconfig.build.json"
     },
     {

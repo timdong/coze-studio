@@ -1,0 +1,535 @@
+---
+description: Coze Studio + EtrxLite 融合项目开发规范
+globs:
+alwaysApply: true
+---
+
+# Coze Studio Super 项目开发规范
+
+## 📋 项目概述
+
+本项目是 **Coze Studio** 和 **EtrxLite** 的融合项目，在 Coze Studio 基础上集成 EtrxLite 的优秀特性。
+
+**核心原则**：松耦合集成，确保不影响未来 Coze Studio 的升级和维护。
+
+**详细开发计划**：请阅读 `INTEGRATION_DEVELOPMENT_PLAN.md`
+
+---
+
+## 🛠️ 技术栈（统一后）
+
+### 后端技术栈
+- **Web框架**: Gin (统一使用 Gin，不再使用 Hertz)
+- **ORM**: GORM (统一使用 GORM，不再使用 Ent)
+- **数据库**: PostgreSQL 17 (统一使用 PostgreSQL，不再使用 MySQL)
+- **配置管理**: Viper (YAML 配置文件，支持环境变量覆盖)
+- **日志系统**: Zap + Lumberjack (结构化日志)
+- **认证系统**: JWT (统一实现)
+- **缓存系统**: Redis + 内存缓存 (多级缓存)
+
+### 前端技术栈
+- **框架**: React 18 + TypeScript
+- **包管理**: Rush + PNPM (Monorepo)
+- **构建工具**: Rsbuild
+- **状态管理**: Zustand
+- **UI组件**: @coze-arch/coze-design
+
+---
+
+## 📁 项目结构
+
+```
+coze-studio/
+├── backend/                    # 后端服务
+│   ├── core/                   # EtrxLite 统一基础设施（日志/缓存/认证/配置/数据库）
+│   ├── api/                    # API 层
+│   ├── application/            # 应用层 (DDD)
+│   ├── domain/                 # 领域层 (DDD)
+│   ├── infra/                  # 基础设施层
+│   ├── extensions/             # 扩展层 (EtrxLite 功能)  
+│   │   ├── etrxtable/         # 多维表格系统
+│   │   ├── er-diagram/        # ER 图编辑器
+│   │   ├── code-generation/   # 代码生成系统
+│   │   └── mas/               # MAS 多智能体系统
+│   ├── config.yaml            # Viper 配置文件
+│   └── main.go                # 主入口
+│
+├── frontend/                   # 前端应用
+│   ├── apps/                  # 应用层
+│   │   └── coze-studio/      # 主应用
+│   ├── packages/              # 包层
+│   │   ├── extensions/        # 扩展包 (EtrxLite 功能)
+│   │   └── ...               # 其他包
+│   └── rush.json              # Rush 配置
+│
+└── docs/                      # 项目文档
+    ├── INTEGRATION_DEVELOPMENT_PLAN.md
+    ├── TECHNICAL_DIFFERENCES.md
+    └── ...
+```
+
+---
+
+## 🚀 开发准备
+
+### 1. 阅读项目文档
+
+开始开发之前必须阅读：
+1. **融合开发计划**: `INTEGRATION_DEVELOPMENT_PLAN.md`
+2. **技术差异文档**: `TECHNICAL_DIFFERENCES.md`
+3. **后端开发文档**: `backend/README.md`
+4. **前端开发文档**: `frontend/README.md`
+
+### 2. 熟悉代码结构
+
+- **后端代码**: `./backend/`
+- **前端代码**: `./frontend/`
+- **统一基础设施**: `./backend/core/` (EtrxLite 统一基础设施)
+- **扩展功能**: `./backend/extensions/` 和 `./frontend/packages/extensions/`
+
+---
+
+## 🔧 后端开发规范
+
+### 启动和编译
+
+```bash
+# 进入后端目录
+cd backend
+
+# 开发模式启动
+go run ./cmd/gin_server/main.go
+
+# 编译（编译产物放到 bin/ 目录）
+go build -o bin/coze-studio-gin ./cmd/gin_server/main.go
+
+# 或使用启动脚本（推荐）
+./start_server.sh start
+
+# 其他命令
+./start_server.sh stop      # 停止服务器
+./start_server.sh restart   # 重启服务器
+./start_server.sh status    # 查看状态
+./start_server.sh logs      # 查看日志
+```
+
+**重要**：编译后的执行文件统一放到 `backend/bin/` 目录，不要直接编译到当前目录或根目录。
+
+### Web 框架：Gin
+
+**统一使用 Gin**，不再使用 Hertz。
+
+```go
+// ✅ 正确：使用 Gin
+import "github.com/gin-gonic/gin"
+
+func main() {
+    router := gin.Default()
+    router.GET("/api/v1/tables", ListTables)
+    router.Run(":8888")
+}
+
+// ❌ 错误：不要使用 Hertz
+// import "github.com/cloudwego/hertz/pkg/app/server"
+```
+
+**路由定义**：
+```go
+// 使用路由组
+api := router.Group("/api")
+v1 := api.Group("/v1")
+{
+    v1.GET("/tables", ListTables)
+    v1.POST("/tables", CreateTable)
+}
+
+// 路由参数
+router.GET("/api/v1/tables/:id", GetTable)
+```
+
+**处理器函数**：
+```go
+// ✅ 正确：Gin 处理器签名
+func ListTables(c *gin.Context) {
+    tables := []Table{...}
+    c.JSON(200, gin.H{
+        "data": tables,
+        "code": 20000,
+        "success": true,
+        "message": "获取表格列表成功",
+    })
+}
+
+// ❌ 错误：不要使用 Hertz 签名
+// func ListTables(ctx context.Context, c *app.RequestContext)
+```
+
+### ORM：GORM
+
+**统一使用 GORM**，不再使用 Ent。
+
+```go
+// ✅ 正确：使用 GORM
+import (
+    "gorm.io/gorm"
+    "gorm.io/driver/postgres"
+)
+
+// 连接 PostgreSQL
+dsn := "host=localhost user=postgres password=password dbname=coze_studio port=15432 sslmode=disable"
+db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+// 定义模型
+type TableBody struct {
+    ID        uint           `gorm:"primaryKey" json:"id"`
+    Name      string         `gorm:"type:varchar(255);not null" json:"name"`
+    CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+    UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+// CRUD 操作
+db.Create(&tableBody)
+db.First(&tableBody, id)
+db.Model(&tableBody).Update("name", "New Name")
+db.Delete(&tableBody, id)
+```
+
+**数据库迁移**：
+```go
+// 使用 GORM AutoMigrate
+db.AutoMigrate(&TableBody{}, &TableColumn{}, &TableRow{})
+```
+
+### 数据库：PostgreSQL 17
+
+**统一使用 PostgreSQL 17**，不再使用 MySQL。
+
+```go
+// ✅ 正确：PostgreSQL 连接
+import "gorm.io/driver/postgres"
+
+dsn := "host=localhost user=postgres password=password dbname=coze_studio port=15432 sslmode=disable TimeZone=Asia/Shanghai"
+db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+// ❌ 错误：不要使用 MySQL
+// import "gorm.io/driver/mysql"
+```
+
+**pgvector 扩展**（如需要）：
+```sql
+-- 安装 pgvector 扩展
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 创建向量列
+ALTER TABLE documents ADD COLUMN embedding vector(1536);
+```
+
+**数据库操作**：
+```bash
+# 连接 PostgreSQL
+psql 'postgresql://postgres:password@localhost:15432/coze_studio_db?sslmode=disable'
+
+# 查看所有表
+PGPASSWORD=password psql -h localhost -p 15432 -U postgres -d coze_studio_db -c "\dt" | cat
+
+# 查看表结构
+PGPASSWORD=password psql -h localhost -p 15432 -U postgres -d coze_studio_db -c "\d table_name" | cat
+```
+
+### 配置管理：Viper
+
+**统一使用 Viper (YAML 配置)**，不再使用环境变量 + godotenv。
+
+```go
+// ✅ 正确：使用 Viper
+import (
+    "github.com/spf13/viper"
+    "strings"
+)
+
+// 初始化 Viper
+viper.SetConfigName("config")
+viper.SetConfigType("yaml")
+viper.AddConfigPath(".")
+viper.ReadInConfig()
+
+// 支持环境变量覆盖
+viper.AutomaticEnv()
+viper.SetEnvPrefix("COZE")
+viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+// 读取配置
+host := viper.GetString("database.host")
+port := viper.GetInt("database.port")
+
+// 或使用结构体
+type Config struct {
+    Database struct {
+        Host string `yaml:"host" mapstructure:"host"`
+        Port int    `yaml:"port" mapstructure:"port"`
+    } `yaml:"database" mapstructure:"database"`
+}
+
+var cfg Config
+viper.Unmarshal(&cfg)
+```
+
+**配置文件格式** (`backend/config.yaml`)：
+```yaml
+# 数据库配置
+database:
+  host: localhost
+  port: 15432
+  user: postgres
+  password: password
+  name: coze_studio_db
+  sslmode: disable
+
+# 服务器配置
+server:
+  host: 0.0.0.0
+  port: 8888
+```
+
+**环境变量覆盖**：
+```bash
+# Viper 会自动读取环境变量，格式：COZE_DATABASE_HOST
+export COZE_DATABASE_HOST=localhost
+export COZE_DATABASE_PORT=15432
+```
+
+### 日志系统：Zap + Lumberjack
+
+**统一使用 Zap + Lumberjack**，结构化日志。
+
+```go
+// ✅ 正确：使用 Zap 日志
+import (
+    "go.uber.org/zap"
+    "github.com/coze-dev/coze-studio/backend/core/logging"  // 统一日志包
+)
+
+// 使用全局日志
+logging.Log.Info("操作成功", 
+    zap.String("user", username),
+    zap.Int("count", count))
+
+logging.Log.Error("操作失败", zap.Error(err))
+logging.Log.Warn("警告信息", zap.String("key", "value"))
+logging.Log.Debug("调试信息", zap.String("key", "value"))
+
+// ❌ 错误：不要使用标准库 log
+// log.Printf("操作成功: %v", result)
+// log.Fatalf("操作失败: %v", err)
+```
+
+### API 返回值格式
+
+**统一返回值格式**：
+
+```go
+// ✅ 正确：统一格式
+c.JSON(200, gin.H{
+    "data": gin.H{
+        "tables": tables,
+        "pagination": gin.H{
+            "page": 1,
+            "page_size": 10,
+            "total": 20,
+            "total_pages": 2,
+        },
+    },
+    "code": 20000,      // 20000 = HTTP 200, 40400 = HTTP 404
+    "success": true,
+    "message": "获取表格列表成功",
+})
+
+// 错误响应
+c.JSON(400, gin.H{
+    "data": nil,
+    "code": 40000,
+    "success": false,
+    "message": "参数错误: " + err.Error(),
+})
+```
+
+### 扩展功能开发
+
+**扩展功能放在 `backend/extensions/` 目录**：
+
+```go
+// backend/extensions/etrxtable/handler.go
+package etrxtable
+
+import "github.com/gin-gonic/gin"
+
+func RegisterRoutes(router *gin.RouterGroup) {
+    tables := router.Group("/extensions/etrxtable/tables")
+    {
+        tables.GET("", ListTables)
+        tables.POST("", CreateTable)
+        tables.GET("/:id", GetTable)
+        tables.PUT("/:id", UpdateTable)
+        tables.DELETE("/:id", DeleteTable)
+    }
+}
+```
+
+---
+
+## 🎨 前端开发规范
+
+### 启动和编译
+
+```bash
+# 进入前端目录
+cd frontend
+
+# 安装依赖（首次）
+rush install
+
+# 开发模式启动
+cd apps/coze-studio
+npm run dev
+# 或使用 rushx
+rushx dev
+
+# 生产构建
+npm run build
+# 或使用 rushx
+rushx build
+```
+
+### 框架：React 18
+
+**统一使用 React 18**，不再使用 Vue。
+
+```tsx
+// ✅ 正确：React 组件
+import { useState, useEffect } from 'react'
+
+function TableList() {
+    const [tables, setTables] = useState([])
+    
+    useEffect(() => {
+        fetchTables()
+    }, [])
+    
+    return (
+        <div>
+            {tables.map(table => (
+                <div key={table.id}>{table.name}</div>
+            ))}
+        </div>
+    )
+}
+
+// ❌ 错误：不要使用 Vue
+// <template><div>{{ table.name }}</div></template>
+```
+
+### 包管理：Rush Monorepo
+
+**扩展功能放在 `frontend/packages/extensions/` 目录**：
+
+```json
+// frontend/packages/extensions/etrxtable/package.json
+{
+  "name": "@coze-extensions/etrxtable",
+  "version": "0.0.1",
+  "dependencies": {
+    "react": "workspace:*",
+    "@coze-arch/coze-design": "workspace:*"
+  }
+}
+```
+
+---
+
+## 🐛 Bug 修复规范
+
+### Bug 分析
+
+遇到 bug 修改之前，要先仔细分析原因，把可能导致 bug 的问题尽量都找到，**系统性修复**。不要一个个可能去试。
+
+### Bug 记录
+
+所有的 bug 修复经验总结在 `./bugs/` 目录下，可以浏览了解，防止开发中的 bug 重复出现。
+
+### 单元测试
+
+遇到新的 bug，要补充对应的 unit test，而且要测试通过。
+
+---
+
+## 📚 文档规范
+
+### 文档位置
+
+1. **项目架构文档**: `INTEGRATION_DEVELOPMENT_PLAN.md`
+2. **技术差异文档**: `TECHNICAL_DIFFERENCES.md`
+3. **后端开发文档**: `backend/README.md`
+4. **前端开发文档**: `frontend/README.md`
+5. **API 文档**: `http://localhost:8888/docs` (Swagger)
+
+### 文档更新
+
+- 如果文档太大，就分成多个部分，多次生成并且更新
+- 重要变更要及时更新文档
+- API 变更要更新 Swagger 文档
+
+---
+
+## 🔒 代码规范
+
+### 代码风格
+
+- 遵循 Go 官方代码规范
+- 使用 `gofmt` 格式化代码
+- 使用 `golint` 检查代码
+- TypeScript 代码遵循 ESLint 规则
+
+### 命名规范
+
+- **Go**: 使用驼峰命名，导出函数/类型首字母大写
+- **TypeScript**: 使用驼峰命名，组件使用 PascalCase
+- **数据库**: 表名使用下划线命名（snake_case）
+
+### 注释规范
+
+- 公共函数/类型必须有注释
+- 复杂逻辑要有注释说明
+- 使用中文注释（项目内部使用）
+
+---
+
+## ✅ 检查清单
+
+### 提交代码前检查
+
+- [ ] 代码已格式化
+- [ ] 代码已通过 lint 检查
+- [ ] 单元测试已通过
+- [ ] API 返回值格式正确
+- [ ] 日志使用统一格式
+- [ ] 配置使用 Viper
+- [ ] 数据库操作使用 GORM
+- [ ] 路由使用 Gin
+- [ ] 文档已更新（如需要）
+
+---
+
+## 📖 参考资料
+
+- [Gin 官方文档](https://gin-gonic.com/docs/)
+- [GORM 官方文档](https://gorm.io/docs/)
+- [PostgreSQL 17 文档](https://www.postgresql.org/docs/17/)
+- [Viper 官方文档](https://github.com/spf13/viper)
+- [Zap 官方文档](https://pkg.go.dev/go.uber.org/zap)
+- [React 官方文档](https://react.dev/)
+- [Rush 官方文档](https://rushjs.io/)
+
+---
+
+**注意**：本文档会根据项目发展持续更新，请定期查看最新版本。

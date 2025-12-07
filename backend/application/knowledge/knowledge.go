@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	dataset "github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
 	document "github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"

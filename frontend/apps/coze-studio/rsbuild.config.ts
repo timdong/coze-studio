@@ -25,7 +25,8 @@ const API_PROXY_TARGET = `http://localhost:${
 
 const mergedConfig = defineConfig({
   server: {
-    strictPort: true,
+    port: process.env.DEV_SERVER_PORT ? parseInt(process.env.DEV_SERVER_PORT, 10) : 8080,
+    strictPort: false, // 允许自动选择其他端口
     proxy: [
       {
         context: ['/api'],

@@ -22,7 +22,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 

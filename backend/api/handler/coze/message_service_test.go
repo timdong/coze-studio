@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/ut"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ import (
 
 func TestGetMessageList(t *testing.T) {
 	h := server.Default()
-	err := application.Init(context.Background())
+	err := application.Init(context.Background(), nil)
 
 	t.Logf("application init err: %v", err)
 

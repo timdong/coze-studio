@@ -36,7 +36,7 @@ import (
 	convEntity "github.com/coze-dev/coze-studio/backend/domain/conversation/conversation/entity"
 	msgEntity "github.com/coze-dev/coze-studio/backend/domain/conversation/message/entity"
 	cmdEntity "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/entity"
-	sseImpl "github.com/coze-dev/coze-studio/backend/infra/sse/impl/sse"
+	sseInterface "github.com/coze-dev/coze-studio/backend/infra/sse"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
@@ -45,7 +45,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
-func (c *ConversationApplicationService) Run(ctx context.Context, sseSender *sseImpl.SSenderImpl, ar *run.AgentRunRequest) error {
+func (c *ConversationApplicationService) Run(ctx context.Context, sseSender sseInterface.SSenderInterface, ar *run.AgentRunRequest) error {
 	agentInfo, caErr := c.checkAgent(ctx, ar)
 	if caErr != nil {
 		logs.CtxErrorf(ctx, "checkAgent err:%v", caErr)
@@ -110,7 +110,7 @@ func (c *ConversationApplicationService) Run(ctx context.Context, sseSender *sse
 	return nil
 }
 
-func (c *ConversationApplicationService) pullStream(ctx context.Context, sseSender *sseImpl.SSenderImpl, arStream *schema.StreamReader[*entity.AgentRunResponse], req *run.AgentRunRequest) {
+func (c *ConversationApplicationService) pullStream(ctx context.Context, sseSender sseInterface.SSenderInterface, arStream *schema.StreamReader[*entity.AgentRunResponse], req *run.AgentRunRequest) {
 	var ackMessageInfo *entity.ChunkMessageItem
 	for {
 		chunk, recvErr := arStream.Recv()

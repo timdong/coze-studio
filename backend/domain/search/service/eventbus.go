@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	"github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	"github.com/coze-dev/coze-studio/backend/infra/eventbus"

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const path = require('path');
 
 const { ESLint } = require('eslint');
@@ -49,16 +65,27 @@ async function excludeIgnoredFiles(changedFiles) {
 
     const changedFilesWithIgnored = await Promise.all(
       withProjectFolder(changedFiles).map(async ({ file, projectFolder }) => {
-        let eslint = eslintInstances.get(projectFolder);
-        if (!eslint) {
-          eslint = new ESLint({ cwd: projectFolder });
-          eslintInstances.set(projectFolder, eslint);
-        }
+        try {
+          let eslint = eslintInstances.get(projectFolder);
+          if (!eslint) {
+            eslint = new ESLint({ cwd: projectFolder });
+            eslintInstances.set(projectFolder, eslint);
+          }
 
-        return {
-          file,
-          isIgnored: await eslint.isPathIgnored(file),
-        };
+          return {
+            file,
+            isIgnored: await eslint.isPathIgnored(file),
+          };
+        } catch (e) {
+          // If ESLint config is missing, treat file as not ignored
+          if (e.message && e.message.includes('Could not find config file')) {
+            return {
+              file,
+              isIgnored: false,
+            };
+          }
+          throw e;
+        }
       }),
     );
 
@@ -67,6 +94,11 @@ async function excludeIgnoredFiles(changedFiles) {
       .map(change => change.file)
       .join(' ');
   } catch (e) {
+    // If ESLint config is missing, return all files (don't exclude any)
+    if (e.message && e.message.includes('Could not find config file')) {
+      console.warn('ESLint config not found, processing all files');
+      return changedFiles.join(' ');
+    }
     console.error(e);
     throw e;
   }

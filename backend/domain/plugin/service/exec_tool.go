@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"strconv"
 
+	pkgsonic "github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/bytedance/sonic"
 	"github.com/getkin/kin-openapi/openapi3"
 
@@ -485,7 +486,7 @@ func (p *pluginServiceImpl) getToolDebugPluginInfo(ctx context.Context, req *mod
 
 func (p *pluginServiceImpl) genToolResponseSchema(ctx context.Context, rawResp string) (openapi3.Responses, error) {
 	valMap := map[string]any{}
-	err := sonic.UnmarshalString(rawResp, &valMap)
+	err := pkgsonic.UnmarshalString(rawResp, &valMap)
 	if err != nil {
 		return nil, errorx.WrapByCode(err, errno.ErrPluginParseToolRespFailed, errorx.KV(errno.PluginMsgKey,
 			"the type of response only supports json map"))
@@ -730,7 +731,7 @@ func (t *toolExecutor) processResponse(ctx context.Context, rawResp string) (tri
 		return rawResp, fmt.Errorf("invalid response process strategy '%d'", t.invalidRespProcessStrategy)
 	}
 
-	trimmedResp, err = sonic.MarshalString(trimmedRespMap)
+	trimmedResp, err = pkgsonic.MarshalString(trimmedRespMap)
 	if err != nil {
 		return "", errorx.Wrapf(err, "marshal trimmed response failed")
 	}

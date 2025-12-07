@@ -101,7 +101,13 @@ func (u *userImpl) Login(ctx context.Context, email, password string) (user *use
 
 	userModel.SessionKey = sessionKey
 
-	resURL, err := u.IconOSS.GetObjectUrl(ctx, userModel.IconURI)
+	// 如果 IconURI 为空，使用默认图标
+	iconURI := userModel.IconURI
+	if iconURI == "" {
+		iconURI = uploadEntity.UserIconURI
+	}
+
+	resURL, err := u.IconOSS.GetObjectUrl(ctx, iconURI)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +150,13 @@ func (u *userImpl) GetUserInfo(ctx context.Context, userID int64) (resp *userEnt
 		return nil, err
 	}
 
-	resURL, err := u.IconOSS.GetObjectUrl(ctx, userModel.IconURI)
+	// 如果 IconURI 为空，使用默认图标
+	iconURI := userModel.IconURI
+	if iconURI == "" {
+		iconURI = uploadEntity.UserIconURI
+	}
+
+	resURL, err := u.IconOSS.GetObjectUrl(ctx, iconURI)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +223,7 @@ func (u *userImpl) ValidateProfileUpdate(ctx context.Context, req *ValidateProfi
 
 func (u *userImpl) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error {
 	updates := map[string]interface{}{
-		"updated_at": time.Now().UnixMilli(),
+		"updated_at_ms": time.Now().UnixMilli(),
 	}
 
 	if req.UniqueName != nil {
@@ -409,8 +421,14 @@ func (u *userImpl) MGetUserProfiles(ctx context.Context, userIDs []int64) (users
 
 	users = make([]*userEntity.User, 0, len(userModels))
 	for _, um := range userModels {
+		// 如果 IconURI 为空，使用默认图标
+		iconURI := um.IconURI
+		if iconURI == "" {
+			iconURI = uploadEntity.UserIconURI
+		}
+
 		// Get image URL
-		resURL, err := u.IconOSS.GetObjectUrl(ctx, um.IconURI)
+		resURL, err := u.IconOSS.GetObjectUrl(ctx, iconURI)
 		if err != nil {
 			continue // If getting the image URL fails, skip the user
 		}
@@ -499,6 +517,60 @@ func (u *userImpl) GetUserSpaceBySpaceID(ctx context.Context, spaceID []int64) (
 	}), nil
 }
 
+func (u *userImpl) CreateSpace(ctx context.Context, req *CreateSpaceRequest) (space *userEntity.Space, err error) {
+	if req.Name == "" {
+		return nil, errorx.New(errno.ErrUserInvalidParamCode, errorx.KV("msg", "space name cannot be empty"))
+	}
+
+	spaceID, err := u.IDGen.GenID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("generate space id error: %w", err)
+	}
+
+	now := time.Now().UnixMilli()
+
+	iconURI := req.IconURI
+	if iconURI == "" {
+		iconURI = uploadEntity.EnterpriseIconURI
+	}
+
+	spaceModel := &model.Space{
+		ID:          spaceID,
+		Name:        req.Name,
+		Description: req.Description,
+		IconURI:     iconURI,
+		OwnerID:     req.OwnerID,
+		CreatorID:   req.CreatorID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	err = u.SpaceRepo.CreateSpace(ctx, spaceModel)
+	if err != nil {
+		return nil, fmt.Errorf("create space failed: %w", err)
+	}
+
+	// Add space user
+	err = u.SpaceRepo.AddSpaceUser(ctx, &model.SpaceUser{
+		SpaceID:   spaceID,
+		UserID:    req.OwnerID,
+		RoleType:  1, // Owner role
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("add space user failed: %w", err)
+	}
+
+	// Get icon URL
+	iconURL, err := u.IconOSS.GetObjectUrl(ctx, iconURI)
+	if err != nil {
+		iconURL = "" // Use empty string if failed
+	}
+
+	return spacePo2Do(spaceModel, iconURL), nil
+}
+
 func spacePo2Do(space *model.Space, iconUrl string) *userEntity.Space {
 	return &userEntity.Space{
 		ID:          space.ID,
@@ -565,27 +637,37 @@ func hashPassword(password string) (string, error) {
 
 // Verify that the passwords match
 func verifyPassword(password, encodedHash string) (bool, error) {
-	// Parse the encoded hash string
+	// 检查哈希格式是否有效
 	parts := strings.Split(encodedHash, "$")
 	if len(parts) != 6 {
-		return false, fmt.Errorf("invalid hash format")
+		// 如果哈希格式无效，返回 false（密码不匹配）而不是错误
+		// 这样可以避免暴露技术细节，用户会看到"邮箱或密码错误"
+		return false, nil
+	}
+
+	// 检查是否是 Argon2id 格式
+	if parts[1] != "argon2id" {
+		return false, nil
 	}
 
 	var p argon2Params
 	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &p.memory, &p.iterations, &p.parallelism)
 	if err != nil {
-		return false, err
+		// 解析参数失败，返回 false（密码不匹配）
+		return false, nil
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return false, err
+		// 解码 salt 失败，返回 false（密码不匹配）
+		return false, nil
 	}
 	p.saltLength = uint32(len(salt))
 
 	decodedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return false, err
+		// 解码 hash 失败，返回 false（密码不匹配）
+		return false, nil
 	}
 	p.keyLength = uint32(len(decodedHash))
 

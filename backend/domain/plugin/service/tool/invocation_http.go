@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/cloudwego/eino/compose"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-resty/resty/v2"

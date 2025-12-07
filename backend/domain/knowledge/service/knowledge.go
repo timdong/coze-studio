@@ -31,7 +31,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"gorm.io/gorm"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/app/developer_api"

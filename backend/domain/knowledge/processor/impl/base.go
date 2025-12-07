@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	knowledge "github.com/coze-dev/coze-studio/backend/crossdomain/knowledge/model"
 	"github.com/coze-dev/coze-studio/backend/domain/knowledge/entity"

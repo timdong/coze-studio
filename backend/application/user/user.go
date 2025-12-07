@@ -223,9 +223,12 @@ func (u *UserApplicationService) UserUpdateProfile(ctx context.Context, req *pas
 func (u *UserApplicationService) GetSpaceListV2(ctx context.Context, req *playground.GetSpaceListV2Request) (
 	resp *playground.GetSpaceListV2Response, err error,
 ) {
-	uid := ctxutil.MustGetUIDFromCtx(ctx)
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrUserAuthenticationFailed, errorx.KV("reason", "session required"))
+	}
 
-	spaces, err := u.DomainSVC.GetUserSpaceList(ctx, uid)
+	spaces, err := u.DomainSVC.GetUserSpaceList(ctx, *uid)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +254,60 @@ func (u *UserApplicationService) GetSpaceListV2(ctx context.Context, req *playgr
 		},
 		Code: 0,
 	}, nil
+}
+
+// OpenCreateSpace 创建空间（OpenAPI）
+func (u *UserApplicationService) OpenCreateSpace(ctx context.Context, req *OpenCreateSpaceRequest) (
+	resp *OpenCreateSpaceResponse, err error,
+) {
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrUserAuthenticationFailed, errorx.KV("reason", "session required"))
+	}
+
+	space, err := u.DomainSVC.CreateSpace(ctx, &user.CreateSpaceRequest{
+		Name:        req.Name,
+		Description: req.Description,
+		IconURI:     req.IconFileID,
+		OwnerID:     *uid,
+		CreatorID:   *uid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &OpenCreateSpaceResponse{
+		Data: &OpenCreateSpaceData{
+			ID:          space.ID,
+			Name:        space.Name,
+			Description: space.Description,
+			IconURL:     space.IconURL,
+		},
+		Code: 0,
+	}, nil
+}
+
+// OpenCreateSpaceRequest 创建空间请求
+type OpenCreateSpaceRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+	IconFileID  string `json:"icon_file_id"`
+	CozeAccountID string `json:"coze_account_id"`
+	OwnerUID    string `json:"owner_uid"`
+}
+
+// OpenCreateSpaceResponse 创建空间响应
+type OpenCreateSpaceResponse struct {
+	Data *OpenCreateSpaceData `json:"data"`
+	Code int64                `json:"code"`
+}
+
+// OpenCreateSpaceData 创建空间数据
+type OpenCreateSpaceData struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IconURL     string `json:"icon_url"`
 }
 
 func (u *UserApplicationService) MGetUserBasicInfo(ctx context.Context, req *playground.MGetUserBasicInfoRequest) (

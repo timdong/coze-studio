@@ -22,7 +22,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/shopspring/decimal"
 	"gopkg.in/yaml.v3"

@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/gin-gonic/gin"
 
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
@@ -51,4 +52,18 @@ func InternalError(ctx context.Context, c *app.RequestContext, err error) {
 
 	logs.CtxErrorf(ctx, "[InternalError]  error: %v \n", err)
 	c.AbortWithStatusJSON(http.StatusInternalServerError, data{Code: 500, Msg: "internal server error"})
+}
+
+// InternalErrorGin Gin 版本的内部错误处理
+func InternalErrorGin(ctx context.Context, c *gin.Context, err error) {
+	var customErr errorx.StatusError
+
+	if errors.As(err, &customErr) && customErr.Code() != 0 {
+		logs.CtxWarnf(ctx, "[ErrorX] error:  %v %v \n", customErr.Code(), err)
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{"code": customErr.Code(), "msg": customErr.Msg()})
+		return
+	}
+
+	logs.CtxErrorf(ctx, "[InternalError]  error: %v \n", err)
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "internal server error"})
 }

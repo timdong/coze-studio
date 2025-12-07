@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	pkgsonic "github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/compose"
 
@@ -37,7 +38,6 @@ import (
 	"github.com/coze-dev/coze-studio/backend/pkg/ctxcache"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
-	sonic2 "github.com/coze-dev/coze-studio/backend/pkg/sonic"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
@@ -156,7 +156,7 @@ func (i *InputReceiver) Invoke(ctx context.Context, _ map[string]any) (map[strin
 			v := s[firstColon+1:]
 			m[k] = v
 		}
-		resumeData, err = sonic.MarshalString(m)
+		resumeData, err = pkgsonic.MarshalString(m)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +173,7 @@ func (i *InputReceiver) Invoke(ctx context.Context, _ map[string]any) (map[strin
 func jsonParseRelaxed(ctx context.Context, data string, schema_ map[string]*vo.TypeInfo) (map[string]any, error) {
 	var result map[string]any
 
-	err := sonic2.UnmarshalString(data, &result)
+	err := pkgsonic.UnmarshalString(data, &result)
 	if err != nil {
 		return nil, err
 	}

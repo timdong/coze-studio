@@ -1336,6 +1336,26 @@
       "packageName": "@coze-arch/bot-md-box-adapter",
       "projectFolder": "frontend/packages/arch/bot-md-box-adapter",
       "tags": ["level-2"]
+    },
+    {
+      "packageName": "@coze-extensions/etrxtable",
+      "projectFolder": "frontend/packages/extensions/etrxtable",
+      "tags": ["level-3"]
+    },
+    {
+      "packageName": "@coze-extensions/mas",
+      "projectFolder": "frontend/packages/extensions/mas",
+      "tags": ["level-3"]
+    },
+    {
+      "packageName": "@coze-extensions/er-diagram",
+      "projectFolder": "frontend/packages/extensions/er-diagram",
+      "tags": ["level-3"]
+    },
+    {
+      "packageName": "@coze-extensions/code-generation",
+      "projectFolder": "frontend/packages/extensions/code-generation",
+      "tags": ["level-3"]
     }
   ]
 }

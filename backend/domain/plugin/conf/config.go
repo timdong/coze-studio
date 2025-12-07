@@ -23,7 +23,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/bytedance/sonic"
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
 
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
